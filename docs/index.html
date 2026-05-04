@@ -619,7 +619,13 @@ async function progressBar(fillId, ms) {
   const fill = $(fillId);
   if (!fill) return;
   if (fast) { fill.style.width = '100%'; return; }
-  // Use a single CSS transition — far more reliable than a JS tick loop
+  // Explicitly anchor at 0%, force a reflow so the browser commits that
+  // starting state, THEN apply the transition and set the target width.
+  // Without the reflow, transition + width-change land in the same style
+  // flush and the browser skips straight to 100% with no animation.
+  fill.style.transition = 'none';
+  fill.style.width = '0%';
+  void fill.getBoundingClientRect(); // force synchronous reflow
   fill.style.transition = `width ${ms}ms linear`;
   fill.style.width = '100%';
   await new Promise(r => setTimeout(r, ms));
