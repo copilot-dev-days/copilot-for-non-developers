@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Copilot for Non-Developers: Work, Assessment, and more!</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;600&display=swap');
+    /* ── Interactive layer ── */
+    .scene { display: none; }
+    .scene.visible { display: block; }
+    @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .anim-fade { animation: fadeIn 0.35s ease forwards; }
+    .anim-slide { animation: slideUp 0.3s ease forwards; }
+    .progress-track {
+      display: inline-block; width: 180px; height: 9px;
+      background: #1a1a1a; border: 1px solid #333; border-radius: 2px;
+      vertical-align: middle; margin: 0 8px; overflow: hidden;
+    }
+    .progress-fill { height: 100%; background: #0078d4; width: 0%; transition: width 80ms linear; }
+    #continue-hint {
+      display: none; margin-top: 16px;
+      font-size: 12px; color: #444;
+    }
+    #continue-hint.visible { display: block; animation: blink-hint 2.5s ease-in-out infinite; }
+    #continue-hint kbd {
+      background: #1e1e1e; border: 1px solid #3a3a3a; border-radius: 3px;
+      padding: 1px 6px; font-family: inherit; font-size: 11px; color: #777;
+    }
+    @keyframes blink-hint { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+    #skip-btn {
+      position: fixed; top: 56px; right: 14px; z-index: 200;
+      background: rgba(25,25,25,0.92); border: 1px solid #2e2e2e;
+      color: #555; font-family: 'Cascadia Code', monospace; font-size: 11px;
+      padding: 5px 13px; border-radius: 3px; cursor: pointer;
+      transition: border-color .15s, color .15s; backdrop-filter: blur(4px);
+    }
+    #skip-btn:hover { border-color: #555; color: #aaa; }
+    #skip-btn.gone { display: none; }
+    .t-run-btn.glow { animation: pulse-glow 2.2s ease-in-out infinite; }
+    @keyframes pulse-glow {
+      0%,100% { box-shadow: 0 0 6px rgba(0,120,212,0.25); }
+      50%      { box-shadow: 0 0 22px rgba(0,120,212,0.65), 0 0 44px rgba(0,120,212,0.2); }
+    }
+    /* Banner sweep */
+    @keyframes banner-sweep {
+      from { opacity: 0; letter-spacing: 0.15em; }
+      to   { opacity: 1; letter-spacing: normal; }
+    }
+    .banner-animate .t-banner-title { animation: banner-sweep 0.6s ease forwards; }
+    .banner-animate .t-banner-sub   { animation: fadeIn 0.5s 0.4s ease both; }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Desktop wallpaper behind acrylic ── */
+    body {
+      font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+      background: #1a1625;
+      background-image:
+        radial-gradient(ellipse 120% 80% at 20% 110%, rgba(0,120,212,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 60% at 80% -10%,  rgba(136,0,255,0.12) 0%, transparent 55%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    /* ── Windows Terminal window (full viewport) ── */
+    .wt {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 100vh;
+      background: rgba(12, 12, 12, 0.92);
+      backdrop-filter: blur(40px) saturate(160%);
+      -webkit-backdrop-filter: blur(40px) saturate(160%);
+    }
+
+    /* ── Title bar ── */
+    .wt-titlebar {
+      height: 32px;
+      background: #1f1f1f;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      user-select: none;
+      -webkit-app-region: drag;
+    }
+    .wt-titlebar-drag {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding-left: 12px;
+    }
+    .wt-titlebar-text {
+      font-size: 11px;
+      color: #888;
+      letter-spacing: 0.02em;
+    }
+    .wt-wincontrols {
+      display: flex;
+      -webkit-app-region: no-drag;
+    }
+    .wt-wc-btn {
+      width: 46px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #aaa;
+      cursor: pointer;
+      transition: background 0.1s;
+      background: none;
+      border: none;
+    }
+    .wt-wc-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .wt-wc-btn.close:hover { background: #e81123; color: #fff; }
+
+    /* ── Tab bar ── */
+    .wt-tabbar {
+      height: 40px;
+      background: #1f1f1f;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 8px;
+      border-bottom: 1px solid #111;
+      flex-shrink: 0;
+      gap: 2px;
+    }
+    .wt-tab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      height: 34px;
+      padding: 0 14px 0 12px;
+      background: #0c0c0c;
+      border: 1px solid #333;
+      border-bottom: 1px solid #0c0c0c;
+      border-radius: 6px 6px 0 0;
+      font-size: 12px;
+      color: #ccc;
+      position: relative;
+      cursor: default;
+      margin-bottom: -1px;
+    }
+    .wt-tab-inactive {
+      background: #1a1a1a;
+      border-bottom-color: #333;
+      color: #777;
+    }
+    .wt-tab-inactive:hover { background: #222; color: #aaa; }
+    .wt-tab-icon { font-size: 13px; }
+    .wt-tab-close {
+      font-size: 10px;
+      color: #666;
+      cursor: pointer;
+      padding: 2px 3px;
+      border-radius: 3px;
+      margin-left: 4px;
+    }
+    .wt-tab-close:hover { background: rgba(255,255,255,0.12); color: #ccc; }
+    .wt-tab-active-indicator {
+      position: absolute;
+      top: 0; left: 8px; right: 8px;
+      height: 2px;
+      background: #0078d4;
+      border-radius: 0 0 2px 2px;
+    }
+    .wt-newtab {
+      height: 28px;
+      width: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      color: #555;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      background: none;
+      border: none;
+    }
+    .wt-newtab:hover { background: rgba(255,255,255,0.07); color: #999; }
+    .wt-tabbar-end {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .wt-toolbar-btn {
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      color: #555;
+      cursor: pointer;
+      border-radius: 4px;
+      background: none;
+      border: none;
+    }
+    .wt-toolbar-btn:hover { background: rgba(255,255,255,0.07); color: #999; }
+
+    /* ── Terminal pane ── */
+    .wt-pane {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 28px 40px;
+      scroll-behavior: smooth;
+    }
+    .wt-pane::-webkit-scrollbar { width: 8px; }
+    .wt-pane::-webkit-scrollbar-track { background: transparent; }
+    .wt-pane::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    .wt-pane::-webkit-scrollbar-thumb:hover { background: #444; }
+
+    /* ── Terminal text styles ── */
+    .t { font-size: 14px; line-height: 1.55; }
+    .t-fg    { color: #cccccc; }
+    .t-dim   { color: #555; }
+    .t-white { color: #f2f2f2; }
+    .t-green { color: #16c60c; }
+    .t-bgreen{ color: #16c60c; font-weight: 600; }
+    .t-blue  { color: #3b78ff; }
+    .t-bblue { color: #3b78ff; font-weight: 600; }
+    .t-cyan  { color: #61d6d6; }
+    .t-bcyan { color: #61d6d6; font-weight: 600; }
+    .t-yellow{ color: #f9f1a5; }
+    .t-red   { color: #e74856; }
+    .t-purple{ color: #b4009e; }
+    .t-bpurple{ color: #c279e0; font-weight: 600; }
+    .t-gray  { color: #767676; }
+
+    .t-block { display: block; }
+    .t-line  { display: flex; align-items: baseline; gap: 0; }
+    .mb-0    { margin-bottom: 0; }
+    .mb-1    { margin-bottom: 6px; }
+    .mb-2    { margin-bottom: 14px; }
+    .mb-3    { margin-bottom: 22px; }
+    .mt-2    { margin-top: 14px; }
+    .mt-3    { margin-top: 22px; }
+
+    /* Prompt */
+    .prompt {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      margin-bottom: 2px;
+    }
+    .prompt-path { color: #3b78ff; font-weight: 600; }
+    .prompt-gt   { color: #cccccc; margin: 0 2px 0 0; }
+    .prompt-cmd  { color: #f2f2f2; }
+
+    /* ── Banner / box ── */
+    .t-banner {
+      display: inline-block;
+      border: 1px solid #3b78ff;
+      padding: 14px 24px;
+      margin: 10px 0 22px;
+      border-radius: 2px;
+    }
+    .t-banner-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #61d6d6;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .t-banner-sub {
+      font-size: 13px;
+      color: #767676;
+      display: block;
+    }
+
+    /* ── Key-value output ── */
+    .t-kv { display: flex; gap: 0; margin-bottom: 3px; }
+    .t-key { color: #61d6d6; min-width: 140px; }
+    .t-colon { color: #555; margin-right: 8px; }
+    .t-val { color: #f2f2f2; }
+
+    /* ── Table ── */
+    .t-table { margin: 8px 0 24px; border-collapse: collapse; font-size: 13px; }
+    .t-table-head th {
+      color: #61d6d6;
+      text-align: left;
+      padding: 0 32px 4px 0;
+      font-weight: 400;
+      border-bottom: 1px solid #333;
+    }
+    .t-table-head .underline-row td {
+      color: #555;
+      padding-bottom: 6px;
+    }
+    .t-table tbody tr { cursor: default; }
+    .t-table tbody tr td { padding: 3px 32px 3px 0; vertical-align: top; }
+    .t-table tbody tr:hover td { background: rgba(255,255,255,0.04); }
+    .t-num  { color: #61d6d6; font-weight: 600; width: 36px; }
+    .t-name { color: #f2f2f2; min-width: 260px; }
+    .t-dur  { color: #767676; min-width: 64px; }
+    .t-desc { color: #888; }
+    .t-link-row td { cursor: pointer; }
+    .t-link-row:hover .t-name { color: #3b78ff; text-decoration: underline; }
+    .t-link-row:hover .t-num  { color: #3b78ff; }
+    .t-link-row a { color: inherit; text-decoration: none; display: contents; }
+
+    /* ── Prereqs ── */
+    .t-check { color: #16c60c; margin-right: 8px; }
+    .t-prereq-line { margin-bottom: 4px; color: #cccccc; }
+
+    /* ── Blink cursor ── */
+    .cursor { display: inline-block; background: #cccccc; width: 8px; height: 14px; vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ── Start button as styled command ── */
+    .t-run-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      padding: 10px 20px;
+      background: rgba(0,120,212,0.18);
+      border: 1px solid #0078d4;
+      border-radius: 3px;
+      color: #61d6d6;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .t-run-btn:hover { background: rgba(0,120,212,0.32); border-color: #3b78ff; color: #f2f2f2; text-decoration: none; }
+    .t-run-btn-arrow { color: #3b78ff; font-size: 16px; }
+
+    .t-secondary-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      margin-left: 12px;
+      padding: 10px 18px;
+      background: transparent;
+      border: 1px solid #333;
+      border-radius: 3px;
+      color: #767676;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .t-secondary-btn:hover { border-color: #555; color: #cccccc; text-decoration: none; }
+
+    /* ── Separator ── */
+    .t-sep { border: none; border-top: 1px solid #222; margin: 28px 0; }
+
+    /* ── Status bar ── */
+    .wt-statusbar {
+      height: 22px;
+      background: #0078d4;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    .wt-statusbar-item { font-size: 11px; color: rgba(255,255,255,0.9); display: flex; align-items: center; gap: 5px; }
+    .wt-statusbar-sep { color: rgba(255,255,255,0.3); }
+    .wt-statusbar-right { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .wt-pane { padding: 12px 16px 32px; }
+      .t-table { font-size: 12px; }
+      .t-table tbody tr td { padding-right: 16px; }
+      .t-desc { display: none; }
+      .wt-statusbar { display: none; }
+    }
+    @media (max-width: 480px) {
+      .wt-titlebar-text { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wt">
+
+  <!-- Title bar -->
+  <div class="wt-titlebar">
+    <div class="wt-titlebar-drag">
+      <span class="wt-titlebar-text">GitHub Copilot for Non-Developers — Windows Terminal</span>
+    </div>
+    <div class="wt-wincontrols">
+      <button class="wt-wc-btn" title="Minimize">&#x2015;</button>
+      <button class="wt-wc-btn" title="Maximize">&#x25A1;</button>
+      <button class="wt-wc-btn close" title="Close">&#x2715;</button>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="wt-tabbar">
+    <div class="wt-tab">
+      <div class="wt-tab-active-indicator"></div>
+      <span class="wt-tab-icon">⚡</span>
+      <span style="font-size:12px;">Workshop</span>
+      <span class="wt-tab-close">&#x2715;</span>
+    </div>
+    <button class="wt-newtab">&#xFF0B;</button>
+    <div class="wt-tabbar-end">
+      <button class="wt-toolbar-btn" title="Search">&#x1F50D;</button>
+      <button class="wt-toolbar-btn" title="Settings">&#x2699;&#xFE0F;</button>
+    </div>
+  </div>
+
+  <!-- Skip intro button (fixed) -->
+  <button id="skip-btn">Skip intro →</button>
+
+  <!-- Terminal content -->
+  <div class="wt-pane" id="wt-pane">
+
+    <!-- ── Scene 0: MOTD (auto) ── -->
+    <div class="scene" id="s0">
+      <p class="t t-dim mb-1">Windows PowerShell</p>
+      <p class="t t-dim mb-2">Copyright (C) Microsoft Corporation. All rights reserved.</p>
+    </div>
+
+    <!-- ── Scene 1: Install command + progress bar (auto) ── -->
+    <div class="scene" id="s1">
+      <div class="prompt mb-1">
+        <span class="prompt-path">PS C:\workshop</span>
+        <span class="prompt-gt">&gt;&nbsp;</span>
+        <span class="prompt-cmd" id="cmd1"></span><span class="cursor" id="cur1"></span>
+      </div>
+      <div id="out1" style="display:none;" class="mb-3">
+        <p class="t t-dim mb-1">Installing <span class="progress-track"><span class="progress-fill" id="pbar"></span></span><span id="pbar-done" style="display:none;" class="t-green">✓ Done</span></p>
+        <p class="t t-dim" id="pbar-msg" style="display:none;">✓ GitHub Copilot for Non-Developers workshop loaded successfully.</p>
+      </div>
+    </div>
+
+    <!-- ── Scene 2: Banner (auto) ── -->
+    <div class="scene" id="s2">
+      <div class="t-banner banner-animate">
+        <span class="t-banner-title">🤖  GitHub Copilot for Non-Developers</span>
+        <span class="t-banner-sub">Work, Assessment, and more! &nbsp;·&nbsp; No code. No experience. Just results.</span>
+      </div>
+    </div>
+
+    <!-- ── Scene 3: Get-WorkshopInfo ── -->
+    <div class="scene" id="s3">
+      <div class="prompt mb-1">
+        <span class="prompt-path">PS C:\workshop</span>
+        <span class="prompt-gt">&gt;&nbsp;</span>
+        <span class="prompt-cmd" id="cmd3"></span><span class="cursor" id="cur3"></span>
+      </div>
+      <div id="out3" style="display:none;" class="mb-3">
+        <div class="t-kv"><span class="t-key">Name</span><span class="t-colon">:</span><span class="t-val t-white">GitHub Copilot for Non-Developers</span></div>
+        <div class="t-kv"><span class="t-key">Duration</span><span class="t-colon">:</span><span class="t-val t-yellow">~45 minutes</span></div>
+        <div class="t-kv"><span class="t-key">Parts</span><span class="t-colon">:</span><span class="t-val t-cyan">10</span></div>
+        <div class="t-kv"><span class="t-key">LiveDemos</span><span class="t-colon">:</span><span class="t-val t-cyan">4</span></div>
+        <div class="t-kv"><span class="t-key">CodeRequired</span><span class="t-colon">:</span><span class="t-val t-green">$false</span></div>
+        <div class="t-kv"><span class="t-key">Audience</span><span class="t-colon">:</span><span class="t-val">&quot;BPMs, PMs, Ops, Strategy, Everyone&quot;</span></div>
+      </div>
+    </div>
+
+    <!-- ── Scene 4: Get-WorkshopParts ── -->
+    <div class="scene" id="s4">
+      <div class="prompt mb-1">
+        <span class="prompt-path">PS C:\workshop</span>
+        <span class="prompt-gt">&gt;&nbsp;</span>
+        <span class="prompt-cmd" id="cmd4"></span><span class="cursor" id="cur4"></span>
+      </div>
+      <div id="out4" style="display:none;">
+        <table class="t-table">
+          <thead class="t-table-head">
+            <tr>
+              <th style="min-width:36px">Part</th>
+              <th style="min-width:260px">Name</th>
+              <th style="min-width:64px">Duration</th>
+              <th>Description</th>
+            </tr>
+            <tr>
+              <td style="color:#555;padding-bottom:6px">----</td>
+              <td style="color:#555;padding-bottom:6px">----</td>
+              <td style="color:#555;padding-bottom:6px">--------</td>
+              <td style="color:#555;padding-bottom:6px">-----------</td>
+            </tr>
+          </thead>
+          <tbody id="parts-tbody">
+            <tr class="t-link-row"><td class="t-num">00</td><td class="t-name"><a href="step.html?step=00-overview">Overview &amp; Goals</a></td><td class="t-dur">3 min</td><td class="t-desc t-dim">What you'll do and why the terminal isn't scary</td></tr>
+            <tr class="t-link-row"><td class="t-num">01</td><td class="t-name"><a href="step.html?step=01-terminal-basics">Terminal Basics</a></td><td class="t-dur">5 min</td><td class="t-desc t-dim">Shell, CLI, TUI — and the 6 commands you actually need</td></tr>
+            <tr class="t-link-row"><td class="t-num">02</td><td class="t-name"><a href="step.html?step=02-copilot-cli-setup">Set Up Copilot CLI</a></td><td class="t-dur">5 min</td><td class="t-desc t-dim">Install, auth, and send your first prompt</td></tr>
+            <tr class="t-link-row"><td class="t-num">03</td><td class="t-name"><a href="step.html?step=03-mcp-setup">Configure MCP Servers</a></td><td class="t-dur">5 min</td><td class="t-desc t-dim">Connect Copilot to M365 via WorkIQ and Agent365</td></tr>
+            <tr class="t-link-row"><td class="t-num">04</td><td class="t-name"><a href="step.html?step=04-workiq-explore">Exploring with WorkIQ</a></td><td class="t-dur">5 min</td><td class="t-desc t-dim">Ask anything about your calendar, email, people, and tasks</td></tr>
+            <tr class="t-link-row"><td class="t-num">05</td><td class="t-name"><a href="step.html?step=05-email-triage">Email Triage</a></td><td class="t-dur">8 min</td><td class="t-desc t-dim">Inbox → priority list → GitHub issue, in 2 minutes</td></tr>
+            <tr class="t-link-row"><td class="t-num">06</td><td class="t-name"><a href="step.html?step=06-notes-to-docs">Notes → Word Document</a></td><td class="t-dur">4 min</td><td class="t-desc t-dim">Raw notes → clean structured Word doc</td></tr>
+            <tr class="t-link-row"><td class="t-num">07</td><td class="t-name"><a href="step.html?step=07-meeting-decisions">Meeting Decisions &amp; Actions</a></td><td class="t-dur">4 min</td><td class="t-desc t-dim">Extract owners, decisions, and open questions</td></tr>
+            <tr class="t-link-row"><td class="t-num">08</td><td class="t-name"><a href="step.html?step=08-data-insights">CSV Data to Insights</a></td><td class="t-dur">5 min</td><td class="t-desc t-dim">Analyze spreadsheets + build an HTML report</td></tr>
+            <tr class="t-link-row"><td class="t-num">09</td><td class="t-name"><a href="step.html?step=09-next-steps">Takeaways &amp; Next Steps</a></td><td class="t-dur">5 min</td><td class="t-desc t-dim">Key lessons and your action plan for Monday</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Scene 5: Test-Prerequisites ── -->
+    <div class="scene" id="s5">
+      <div class="prompt mb-1">
+        <span class="prompt-path">PS C:\workshop</span>
+        <span class="prompt-gt">&gt;&nbsp;</span>
+        <span class="prompt-cmd" id="cmd5"></span><span class="cursor" id="cur5"></span>
+      </div>
+      <div id="out5" style="display:none;" class="mb-3">
+        <p class="t t-prereq-line"><span class="t-check">✓</span>GitHub account with Copilot access</p>
+        <p class="t t-prereq-line"><span class="t-check">✓</span>Node.js 18+ installed</p>
+        <p class="t t-prereq-line"><span class="t-check">✓</span>Terminal or shell (any)</p>
+        <p class="t t-prereq-line"><span class="t-check">✓</span>Microsoft 365 account (for MCP demos)</p>
+        <p class="t t-prereq-line"><span class="t-check">✓</span>~15 minutes to pre-install before the session</p>
+        <p class="t t-prereq-line" style="margin-top:8px;"><span style="color:#f9f1a5;margin-right:8px;">ℹ</span>No coding experience required. Everything is plain English.</p>
+      </div>
+    </div>
+
+    <!-- ── Scene 6: Start-Workshop (final) ── -->
+    <div class="scene" id="s6">
+      <div class="prompt mb-2">
+        <span class="prompt-path">PS C:\workshop</span>
+        <span class="prompt-gt">&gt;&nbsp;</span>
+        <span class="prompt-cmd" id="cmd6"></span><span class="cursor" id="cur6"></span>
+      </div>
+      <div id="out6" style="display:none;">
+        <p class="t t-dim mb-2">Launching interactive workshop session... Press Enter to begin.</p>
+        <div class="mb-3">
+          <a href="step.html?step=00-overview" class="t-run-btn glow">
+            <span>▶&nbsp; Start-Workshop</span>
+            <span class="t-run-btn-arrow">→</span>
+          </a>
+          <a href="https://github.com/copilot-dev-days/copilot-for-non-developers" target="_blank" class="t-secondary-btn">
+            ⭐ GitHub Repo
+          </a>
+        </div>
+        <hr class="t-sep">
+        <div class="prompt mb-2">
+          <span class="prompt-path">PS C:\workshop</span>
+          <span class="prompt-gt">&gt;&nbsp;</span>
+          <span class="prompt-cmd">Get-Resources</span>
+        </div>
+        <div class="mb-3">
+          <div class="t-kv"><span class="t-key t-cyan">CopilotCLI</span><span class="t-colon">&nbsp;</span><span class="t-val"><a href="https://docs.github.com/en/copilot/how-tos/copilot-cli" target="_blank" style="color:#3b78ff;">https://docs.github.com/en/copilot/how-tos/copilot-cli</a></span></div>
+          <div class="t-kv"><span class="t-key t-cyan">WorkIQ</span><span class="t-colon">&nbsp;</span><span class="t-val"><a href="https://github.com/microsoft/work-iq" target="_blank" style="color:#3b78ff;">https://github.com/microsoft/work-iq</a></span></div>
+          <div class="t-kv"><span class="t-key t-cyan">Agent365MCP</span><span class="t-colon">&nbsp;</span><span class="t-val"><a href="https://github.com/microsoft/mcp" target="_blank" style="color:#3b78ff;">https://github.com/microsoft/mcp</a></span></div>
+          <div class="t-kv"><span class="t-key t-cyan">WorkshopRepo</span><span class="t-colon">&nbsp;</span><span class="t-val"><a href="https://github.com/copilot-dev-days/copilot-for-non-developers" target="_blank" style="color:#3b78ff;">https://github.com/copilot-dev-days/copilot-for-non-developers</a></span></div>
+        </div>
+        <div class="prompt">
+          <span class="prompt-path">PS C:\workshop</span>
+          <span class="prompt-gt">&gt;&nbsp;</span>
+          <span class="cursor"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Continue hint -->
+    <div id="continue-hint">Press <kbd>Enter</kbd> or <kbd>Space</kbd> · click anywhere to run next command</div>
+
+  </div><!-- /.wt-pane -->
+
+  <!-- Status bar -->
+  <div class="wt-statusbar">
+    <span class="wt-statusbar-item">⚡ Workshop</span>
+    <span class="wt-statusbar-sep">│</span>
+    <span class="wt-statusbar-item" id="sb-status">Loading...</span>
+    <span class="wt-statusbar-sep">│</span>
+    <span class="wt-statusbar-item">UTF-8</span>
+    <div class="wt-statusbar-right">
+      <span class="wt-statusbar-item" id="sb-step">Step 0 / 6</span>
+      <span class="wt-statusbar-sep">│</span>
+      <span class="wt-statusbar-item">100%</span>
+    </div>
+  </div>
+
+</div><!-- /.wt -->
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  Interactive Terminal Onboarding  ·  docs/index.html
+// ─────────────────────────────────────────────────────────────
+
+const SPEED_NORMAL = 42;   // ms per char
+const SPEED_FAST   = 8;    // ms per char (skip mode)
+
+let step        = -1;      // current step index
+let animating   = false;
+let fast        = false;   // skip/fast-forward mode
+
+// Reusable wait that respects fast mode
+const wait = ms => new Promise(r => setTimeout(r, fast ? Math.min(ms, 30) : ms));
+
+// ── DOM helpers ──────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const show = id => { const e = $(id); if (e) e.style.display = ''; };
+const hide = id => { const e = $(id); if (e) e.style.display = 'none'; };
+
+function showScene(id) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.add('visible');
+  el.style.animation = 'fadeIn 0.3s ease forwards';
+}
+
+async function typeText(elId, text) {
+  const el = $(elId);
+  if (!el) return;
+  el.textContent = '';
+  const speed = () => fast ? SPEED_FAST : SPEED_NORMAL;
+  for (const ch of text) {
+    el.textContent += ch;
+    await new Promise(r => setTimeout(r, speed()));
+  }
+}
+
+async function progressBar(fillId, ms) {
+  const fill = $(fillId);
+  if (!fill) return;
+  const ticks = 40;
+  const step = (fast ? Math.min(ms, 400) : ms) / ticks;
+  for (let i = 1; i <= ticks; i++) {
+    fill.style.width = (i / ticks * 100) + '%';
+    await new Promise(r => setTimeout(r, step));
+  }
+}
+
+async function revealRows(selector, msEach) {
+  const rows = document.querySelectorAll(selector);
+  for (const r of rows) {
+    r.style.opacity = '0';
+    r.style.transition = 'opacity 0.15s';
+    await wait(fast ? 10 : msEach);
+    r.style.opacity = '1';
+  }
+}
+
+function scrollBot() {
+  const pane = $('wt-pane');
+  if (pane) pane.scrollTop = pane.scrollHeight;
+}
+
+function setStatus(text) {
+  const el = $('sb-status'); if (el) el.textContent = text;
+}
+function setStepBadge(n) {
+  const el = $('sb-step'); if (el) el.textContent = `Step ${n} / 6`;
+}
+
+function showHint() {
+  const h = $('continue-hint'); if (h) h.classList.add('visible');
+  scrollBot();
+}
+function hideHint() {
+  const h = $('continue-hint'); if (h) h.classList.remove('visible');
+}
+
+// ── Step definitions ─────────────────────────────────────────
+const steps = [
+  // 0 — MOTD (auto)
+  {
+    auto: true, autoDelay: 700, statusText: 'Starting...',
+    async run() { showScene('s0'); await wait(300); }
+  },
+  // 1 — Install (auto)
+  {
+    auto: true, autoDelay: 300, statusText: 'Installing module...',
+    async run() {
+      showScene('s1');
+      await typeText('cmd1', 'Install-Module GitHubCopilot -Scope CurrentUser');
+      hide('cur1'); await wait(300);
+      show('out1');
+      await progressBar('pbar', 1100);
+      show('pbar-done'); await wait(250);
+      show('pbar-msg'); await wait(350);
+    }
+  },
+  // 2 — Banner (auto)
+  {
+    auto: true, autoDelay: 600, statusText: 'Ready.',
+    async run() { showScene('s2'); await wait(500); }
+  },
+  // 3 — Get-WorkshopInfo (user)
+  {
+    statusText: 'Running: Get-WorkshopInfo',
+    async run() {
+      showScene('s3');
+      await typeText('cmd3', 'Get-WorkshopInfo'); hide('cur3'); await wait(280);
+      show('out3');
+      await revealRows('#out3 .t-kv', 80);
+    }
+  },
+  // 4 — Get-WorkshopParts (user)
+  {
+    statusText: 'Running: Get-WorkshopParts',
+    async run() {
+      showScene('s4');
+      await typeText('cmd4', 'Get-WorkshopParts | Format-Table -AutoSize'); hide('cur4'); await wait(280);
+      show('out4');
+      await revealRows('#parts-tbody tr', 60);
+    }
+  },
+  // 5 — Test-Prerequisites (user)
+  {
+    statusText: 'Running: Test-Prerequisites',
+    async run() {
+      showScene('s5');
+      await typeText('cmd5', 'Test-Prerequisites'); hide('cur5'); await wait(280);
+      show('out5');
+      await revealRows('#out5 .t-prereq-line', 110);
+    }
+  },
+  // 6 — Start-Workshop (user, final)
+  {
+    statusText: 'Ready to launch! 🚀', isFinal: true,
+    async run() {
+      showScene('s6');
+      await typeText('cmd6', 'Start-Workshop'); hide('cur6'); await wait(280);
+      show('out6');
+    }
+  }
+];
+
+// ── Runner ───────────────────────────────────────────────────
+async function runStep(i) {
+  if (i >= steps.length) return finalize();
+  step = i;
+  animating = true;
+  hideHint();
+  const s = steps[i];
+  setStepBadge(i);
+  setStatus(s.statusText || '');
+
+  await s.run();
+  scrollBot();
+  animating = false;
+  fast = false;
+
+  if (s.auto) {
+    await wait(s.autoDelay || 400);
+    runStep(i + 1);
+  } else if (!s.isFinal) {
+    showHint();
+  } else {
+    finalize();
+  }
+}
+
+function finalize() {
+  setStatus('Done ✓');
+  setStepBadge(6);
+  hideHint();
+  $('skip-btn').classList.add('gone');
+  scrollBot();
+}
+
+// ── Advance on click / keypress ───────────────────────────────
+function advance(e) {
+  if (e && e.target && e.target.closest('a')) return; // don't swallow link clicks
+  if (animating) { fast = true; return; }
+  const next = step + 1;
+  if (next < steps.length) runStep(next);
+  else finalize();
+}
+
+$('wt-pane').addEventListener('click', advance);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); advance(e); }
+});
+
+// ── Skip intro ───────────────────────────────────────────────
+$('skip-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  fast = true;
+  // Show all scenes instantly
+  for (let i = 0; i < steps.length; i++) showScene('s' + i);
+
+  // Populate typed commands
+  const cmds = {
+    cmd1: 'Install-Module GitHubCopilot -Scope CurrentUser',
+    cmd3: 'Get-WorkshopInfo',
+    cmd4: 'Get-WorkshopParts | Format-Table -AutoSize',
+    cmd5: 'Test-Prerequisites',
+    cmd6: 'Start-Workshop'
+  };
+  Object.entries(cmds).forEach(([id, t]) => { const e = $(id); if (e) e.textContent = t; });
+
+  // Hide typing cursors
+  ['cur1','cur3','cur4','cur5','cur6'].forEach(id => hide(id));
+
+  // Show all outputs
+  ['out1','pbar-done','pbar-msg','out3','out4','out5','out6'].forEach(id => show(id));
+
+  // Progress bar full
+  const fill = $('pbar'); if (fill) fill.style.width = '100%';
+
+  // All rows / items visible
+  document.querySelectorAll('#out3 .t-kv, #parts-tbody tr, #out5 .t-prereq-line')
+    .forEach(el => el.style.opacity = '1');
+
+  step = steps.length - 1;
+  animating = false;
+  finalize();
+  scrollBot();
+});
+
+// ── Boot ─────────────────────────────────────────────────────
+window.addEventListener('load', () => setTimeout(() => runStep(0), 350));
+</script>
+
+</body>
+</html>

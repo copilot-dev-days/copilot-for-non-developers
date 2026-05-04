@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Copilot for Non-Developers — Workshop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <a href="index.html">🏠 Copilot for Non-Developers</a>
+    </div>
+    <div class="sidebar-title">Workshop Parts</div>
+    <div class="sidebar-nav" id="sidebarNav">
+      <!-- populated by JS -->
+    </div>
+    <div class="sidebar-footer" id="sidebarFooter">
+      <div>Progress</div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main-content" id="mainContent">
+    <header class="content-header">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
+      <span class="header-title" id="headerTitle">Loading…</span>
+      <div class="nav-buttons">
+        <a class="nav-btn" id="prevBtn" href="#">← Prev</a>
+        <a class="nav-btn next" id="nextBtn" href="#">Next →</a>
+      </div>
+    </header>
+
+    <div class="content-body">
+      <div id="content">
+        <div class="loading">
+          <div class="spinner"></div>
+          <span>Loading workshop content…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STEPS = [
+  { id: '00-overview',           file: 'workshop/00-overview.md',           title: 'Overview & Goals',               number: '00', time: '3 min'  },
+  { id: '01-terminal-basics',    file: 'workshop/01-terminal-basics.md',    title: 'Terminal Basics',                number: '01', time: '10 min' },
+  { id: '02-copilot-cli-setup',  file: 'workshop/02-copilot-cli-setup.md',  title: 'Copilot CLI Setup',              number: '02', time: '7 min'  },
+  { id: '03-mcp-setup',          file: 'workshop/03-mcp-setup.md',          title: 'MCP Server Setup',               number: '03', time: '5 min'  },
+  { id: '04-workiq-explore',     file: 'workshop/04-workiq-explore.md',     title: 'Exploring with WorkIQ',          number: '04', time: '5 min'  },
+  { id: '05-email-triage',       file: 'workshop/05-email-triage.md',       title: 'Email Triage',                   number: '05', time: '8 min'  },
+  { id: '06-notes-to-docs',      file: 'workshop/06-notes-to-docs.md',      title: 'Notes → Word Document',          number: '06', time: '4 min'  },
+  { id: '07-meeting-decisions',  file: 'workshop/07-meeting-decisions.md',  title: 'Meeting Decisions & Actions',    number: '07', time: '4 min'  },
+  { id: '08-data-insights',      file: 'workshop/08-data-insights.md',      title: 'CSV Data to Insights',           number: '08', time: '5 min'  },
+  { id: '09-next-steps',         file: 'workshop/09-next-steps.md',         title: 'Takeaways & Next Steps',         number: '09', time: '5 min'  },
+];
+
+const DONE_KEY = 'cli-workshop-done-steps';
+
+function getDoneSteps() {
+  try { return JSON.parse(localStorage.getItem(DONE_KEY) || '[]'); } catch { return []; }
+}
+function markDone(stepId) {
+  const done = getDoneSteps();
+  if (!done.includes(stepId)) {
+    done.push(stepId);
+    try { localStorage.setItem(DONE_KEY, JSON.stringify(done)); } catch {}
+  }
+}
+
+function getStepFromURL() {
+  return new URLSearchParams(window.location.search).get('step') || STEPS[0].id;
+}
+
+function buildStepURL(stepId) {
+  return `step.html?step=${stepId}`;
+}
+
+function buildSidebar(currentId) {
+  const done = getDoneSteps();
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = STEPS.map(s => {
+    const isCurrent = s.id === currentId;
+    const isDone = done.includes(s.id) && !isCurrent;
+    const link = `<a href="${buildStepURL(s.id)}" class="step-link${isCurrent ? ' active' : ''}${isDone ? ' done' : ''}">
+      <span class="step-num">${isDone ? '✓' : s.number}</span>
+      <span class="step-name">${s.title}</span>
+      <span class="step-dur">${s.time}</span>
+    </a>`;
+    const subnav = isCurrent ? `<div class="step-subnav" id="stepSubnav"></div>` : '';
+    return link + subnav;
+  }).join('');
+  const pct = Math.round(done.length / STEPS.length * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function buildNavButtons(currentId) {
+  const idx = STEPS.findIndex(s => s.id === currentId);
+  const prev = STEPS[idx - 1];
+  const next = STEPS[idx + 1];
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  if (prev) { prevBtn.href = buildStepURL(prev.id); prevBtn.removeAttribute('aria-disabled'); }
+  else { prevBtn.href = 'index.html'; }
+  if (next) { nextBtn.href = buildStepURL(next.id); nextBtn.textContent = 'Next →'; }
+  else { nextBtn.href = 'index.html'; nextBtn.textContent = '🎉 Finish'; }
+}
+
+function addCopyButtons() {
+  document.querySelectorAll('.markdown pre').forEach(pre => {
+    if (pre.querySelector('.copy-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code');
+      navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+      });
+    });
+    pre.style.position = 'relative';
+    pre.appendChild(btn);
+  });
+}
+
+function fixCheckboxes() {
+  const stepId = getStepFromURL();
+  const storageKey = `cli-workshop-checks:${stepId}`;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch {}
+
+  let idx = 0;
+  document.querySelectorAll('.markdown li').forEach(li => {
+    const cb = li.querySelector('input[type=checkbox]');
+    if (!cb) return;
+    li.classList.add('task-item');
+    cb.removeAttribute('disabled');
+    cb.style.cursor = 'pointer';
+    const key = String(idx);
+    if (saved[key]) cb.checked = true;
+    cb.addEventListener('change', () => {
+      saved[key] = cb.checked;
+      try { localStorage.setItem(storageKey, JSON.stringify(saved)); } catch {}
+    });
+    idx++;
+  });
+}
+
+function rewriteLinks(stepId) {
+  document.querySelectorAll('.markdown a').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    const match = href.match(/^(?:\.\/)?(?:workshop\/)?(\d+[-\w]+)\.md$/);
+    if (match) {
+      const targetId = match[1];
+      const found = STEPS.find(s => s.id === targetId || s.id === targetId.replace(/^workshop\//, ''));
+      if (found) a.href = buildStepURL(found.id);
+    }
+  });
+}
+
+async function loadStep(stepId) {
+  const step = STEPS.find(s => s.id === stepId) || STEPS[0];
+  document.title = `${step.title} — Copilot for Non-Developers`;
+  document.getElementById('headerTitle').textContent = `Part ${step.number}: ${step.title}`;
+  buildSidebar(stepId);
+  buildNavButtons(stepId);
+
+  const contentEl = document.getElementById('content');
+  contentEl.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading…</span></div>';
+
+  try {
+    const res = await fetch(step.file);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const md = await res.text();
+    contentEl.innerHTML = `<div class="markdown">${marked.parse(md)}</div>`;
+    addCopyButtons();
+    fixCheckboxes();
+    rewriteLinks(stepId);
+    initOsTabs();
+    buildSubnav(stepId);
+    markDone(stepId);
+    document.getElementById('mainContent').scrollTop = 0;
+    buildSidebar(stepId); // refresh to show done
+  } catch (err) {
+    contentEl.innerHTML = `<div class="loading"><p>⚠️ Could not load <code>${step.file}</code></p><p style="font-size:13px;color:var(--text-subtle);margin-top:8px;">${err.message}</p></div>`;
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('active');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('active');
+}
+
+const OS_TAB_KEY = 'cli-workshop-os-tab';
+const SECTION_DONE_PREFIX = 'cli-workshop-section-done:';
+
+function getSectionDone(stepId) {
+  try { return JSON.parse(localStorage.getItem(SECTION_DONE_PREFIX + stepId) || '[]'); } catch { return []; }
+}
+
+function toggleSectionDone(stepId, anchor, btn) {
+  let done = getSectionDone(stepId);
+  const wasDone = done.includes(anchor);
+  if (wasDone) {
+    done = done.filter(a => a !== anchor);
+  } else {
+    done.push(anchor);
+  }
+  try { localStorage.setItem(SECTION_DONE_PREFIX + stepId, JSON.stringify(done)); } catch {}
+  const item = btn.closest('.subnav-item');
+  if (!wasDone) {
+    item.classList.add('done');
+    btn.classList.add('done');
+    btn.textContent = '✓';
+    btn.title = 'Mark undone';
+  } else {
+    item.classList.remove('done');
+    btn.classList.remove('done');
+    btn.textContent = '○';
+    btn.title = 'Mark done';
+  }
+}
+
+function scrollToSection(anchor) {
+  const el = document.getElementById(anchor);
+  const container = document.getElementById('mainContent');
+  if (el && container) {
+    const elTop = el.getBoundingClientRect().top;
+    const containerTop = container.getBoundingClientRect().top;
+    container.scrollBy({ top: elTop - containerTop - 80, behavior: 'smooth' });
+  }
+  return false;
+}
+
+function buildSubnav(stepId) {
+  const subnavEl = document.getElementById('stepSubnav');
+  if (!subnavEl) return;
+
+  const saved = getSectionDone(stepId);
+  const headings = [...document.querySelectorAll('.markdown h2, .markdown h3')];
+
+  const items = headings.filter(h => {
+    const text = h.textContent.trim();
+    if (text.startsWith('✅')) return false;
+    if (h.tagName === 'H2') return true;
+    if (h.tagName === 'H3' && /^(Task|Step)\s*\d+/i.test(text)) return true;
+    return false;
+  });
+
+  if (!items.length) { subnavEl.style.display = 'none'; return; }
+
+  items.forEach(h => {
+    if (!h.id) {
+      h.id = h.textContent.trim().toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+    }
+  });
+
+  subnavEl.innerHTML = items.map(h => {
+    const anchor = h.id;
+    const isH3 = h.tagName === 'H3';
+    const isDone = saved.includes(anchor);
+    const label = h.textContent.trim();
+    return `<div class="subnav-item${isH3 ? ' subnav-h3' : ''}${isDone ? ' done' : ''}">
+      <a onclick="return scrollToSection('${anchor}')" href="#">${label}</a>
+      <button class="subnav-done-btn${isDone ? ' done' : ''}"
+              onclick="toggleSectionDone('${stepId}','${anchor}',this)"
+              title="${isDone ? 'Mark undone' : 'Mark done'}">${isDone ? '✓' : '○'}</button>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(btn, tabName) {
+  const group = btn.closest('.tab-group');
+  // Switch clicked group
+  group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  group.querySelector(`.tab-panel[data-tab="${tabName}"]`).classList.add('active');
+  // If this is an OS tab, sync all other OS tab groups and persist
+  if (group.classList.contains('os-tabs')) {
+    try { localStorage.setItem(OS_TAB_KEY, tabName); } catch {}
+    document.querySelectorAll('.tab-group.os-tabs').forEach(g => {
+      if (g === group) return;
+      const matchBtn = g.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+      const matchPanel = g.querySelector(`.tab-panel[data-tab="${tabName}"]`);
+      if (matchBtn && matchPanel) {
+        g.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        g.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        matchBtn.classList.add('active');
+        matchPanel.classList.add('active');
+      }
+    });
+  }
+}
+
+function initOsTabs() {
+  let saved;
+  try { saved = localStorage.getItem(OS_TAB_KEY); } catch { saved = null; }
+  if (!saved) return;
+  document.querySelectorAll('.tab-group.os-tabs').forEach(group => {
+    const matchBtn = group.querySelector(`.tab-btn[data-tab="${saved}"]`);
+    const matchPanel = group.querySelector(`.tab-panel[data-tab="${saved}"]`);
+    if (matchBtn && matchPanel) {
+      group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      group.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      matchBtn.classList.add('active');
+      matchPanel.classList.add('active');
+    }
+  });
+}
+
+// Init
+loadStep(getStepFromURL());
+</script>
+
+</body>
+</html>

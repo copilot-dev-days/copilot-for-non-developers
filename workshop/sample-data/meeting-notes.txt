@@ -1,0 +1,74 @@
+GitHub Copilot CLI Workshop Planning — Sync Meeting
+Date: Friday, May 8, 2026
+Attendees: Aarav M., Priya A., James O., Sofia N., Kenji T. (IT)
+Facilitator: Aarav
+Notes taken by: Priya (sorry in advance for the messiness)
+
+---
+
+KICKED OFF around 2pm, Kenji joined 5 min late
+
+Aarav opened with a summary of where we are:
+- June 3rd is locked, auditorium confirmed
+- ~200 registered already which is WILD, expected maybe 80
+- Lots of questions coming in from non-technical teams asking "is this really for me?"
+
+Priya: we should address that head on in the intro - maybe put a slide that says
+explicitly "this is not a coding workshop, you will write zero code today"
+
+James agrees - said that was the biggest unlock when he first tried it, realizing
+you don't need to memorize anything
+
+KENJI UPDATE ON IT/ADMIN STUFF
+- Tenant admin consent for WorkIQ: Kenji confirmed he can pre-approve this before June 3rd
+  for all users in the NA tenant. EMEA will need a separate request, Kenji will loop in
+  Maria C. from EMEA IT by May 16th.
+- GitHub Copilot seat requests: goes through IT portal, 2 business day SLA, link is
+  https://contoso.sharepoint.com/sites/it/copilot-request (Kenji to confirm this is still the right URL)
+- Laptop prereqs: need Node.js 18+ and Git. Kenji's team will send a pre-check script
+  to all registered attendees by May 28th.
+
+CONTENT DECISIONS
+- We will use the sample data files (email thread, meeting notes, CSV) instead of live
+  attendee data. Sofia pointed out this is actually better for demos anyway because we
+  can control the "wow moments"
+- Demo order confirmed: email triage first (most relatable), then meeting notes, then CSV
+- James will do a 60-second "what is a terminal" explainer before the first demo to
+  set the right tone. Sofia loved this idea.
+- Decided to keep the Agent365 MCP config to Mail + Calendar only for the workshop.
+  Don't want to overwhelm people. Can share the full list in take-home materials.
+
+James: "the goal is they leave with ONE thing they can do Monday morning, not ten things
+they're scared to try" <-- really good framing, use this in the intro somehow?
+
+ACTION ITEMS
+- Aarav: finalize sample data files (email thread, meeting notes, CSV) by May 15
+- Aarav: send workshop repo link to all registered attendees with setup instructions
+- Priya: add "this is NOT a coding workshop" language to intro slide (by May 12)
+- James: complete slide deck and share for review by May 14, dry run May 27
+- Sofia: prepare demo scripts with exact prompts she'll use (by May 16)
+- Sofia: create take-home cheat sheet PDF - one page, top 10 prompts (by May 20)
+- Kenji: pre-approve WorkIQ admin consent for NA tenant (by May 23)
+- Kenji: loop in EMEA IT (Maria Santos) by May 16
+- Kenji: send prereq check script to attendees by May 28
+
+OPEN QUESTIONS (still need resolution!)
+- Should we open registration to EMEA now or wait until admin consent is sorted?
+  (Priya's leaning toward opening it, Aarav wants to wait -- no consensus yet)
+- Virtual attendance option? Kenji can set up a Teams Live Event but needs 5 days lead
+  time. Need decision by May 20.
+- What's the escalation path if someone's GitHub Copilot seat request isn't approved
+  in time for June 3rd? (Action: Aarav to check with GitHub CSM)
+- Should the cheat sheet be branded with the Contoso logo or keep it as plain GitHub
+  Copilot branding? (Sofia doesn't care, Priya cares a lot lol)
+
+RANDOM NOTES
+- James showed everyone the daily-outlook-triage skill mid-meeting and it got audible
+  gasps. Definitely opening with that.
+- Sofia wants to add a "before & after" slide: "30 min scrolling vs 2 min Copilot CLI"
+- Aarav said he'll add a QR code at the end linking to the workshop repo
+- Everyone agreed we should do this quarterly once it lands well
+
+Next sync: May 20th, 2pm PT — Aarav to send invite
+
+Meeting ended ~3:15pm (ran 15 min over, sorry Kenji)

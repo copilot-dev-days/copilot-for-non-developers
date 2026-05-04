@@ -1,0 +1,118 @@
+From: Priya A. <priya.a@contoso.com>
+To: Workshop Planning Team <workshop-team@contoso.com>
+Date: Wednesday, May 6, 2026 9:14 AM
+Subject: Re: Re: Re: GitHub Copilot CLI Workshop for ALL Teams — June 3rd! 🚀
+
+Team!
+
+Just got off a call with the AV folks — we're confirmed for the Main Auditorium on June 3rd,
+9:00 AM to 12:00 PM. They'll have the big screen AND a live captioning feed. This is going
+to be so good.
+
+Quick recap of where we landed on the open questions from Thursday:
+
+✅ Recording: YES — IT confirmed Streams will capture everything. We'll post to the
+   all-hands SharePoint by June 5th.
+✅ Catering: Morning pastries + coffee sponsored by the VS Code team budget. THANK YOU
+   James! 🙌
+✅ Presenter lineup confirmed: Priya (intro), James (CLI demo), Aarav (MCP / WorkIQ setup),
+   Sofia (live workflow demos)
+
+Still needs an owner:
+❓ Who's creating the take-home cheat sheet PDF? (Suggested: Sofia or Aarav)
+❓ Should we send a calendar invite to all of EMEA or just the NA teams first?
+❓ Do we want a "share your #CLIwin" Viva Engage thread after the session?
+
+One more thing — Aarav flagged that some attendees may not have GitHub Copilot enabled yet.
+Can someone confirm the process for requesting a seat? I think it goes through IT but
+let me know if that's changed.
+
+Going to be epic. See everyone June 3rd! 🎉
+
+— Priya
+
+---
+
+From: James O. <james.o@contoso.com>
+To: Workshop Planning Team <workshop-team@contoso.com>
+Date: Thursday, April 30, 2026 3:42 PM
+Subject: Re: Re: GitHub Copilot CLI Workshop for ALL Teams — June 3rd! 🚀
+
+Priya — auditorium confirmed is HUGE news. We've been trying to get that room for months 😂
+
+Quick update from my end:
+
+- Demo environment is ready. I'm using a clean M365 dev tenant so nothing embarrassing
+  shows up on screen during the email triage demo (learned that lesson the hard way lol)
+- WorkIQ plugin installs in under 2 minutes on a fresh machine — tested on both Mac and
+  Windows. The admin consent flow for the tenant is the only wild card.
+- Slide deck is at ~70%. Will share for review by EOD Friday.
+
+One concern: Aarav mentioned that not all teams have admin consent set up for WorkIQ yet.
+Can we get IT to pre-approve the tenant consent BEFORE June 3rd so it doesn't block anyone
+during the live setup section? That would make the workshop flow so much smoother.
+
+Also — I think we should do a dry run on May 27th. Who's free that afternoon?
+
+VS Code team's catering offer stands (pastries and coffee, my one contribution 😄).
+
+— James
+
+---
+
+From: Sofia N. <sofia.n@contoso.com>
+To: Workshop Planning Team <workshop-team@contoso.com>
+Date: Wednesday, April 29, 2026 11:22 AM
+Subject: Re: GitHub Copilot CLI Workshop for ALL Teams — June 3rd! 🚀
+
+Oh this is exciting!! I've been wanting to do this for SO long.
+
+I can cover the live workflow demos — happy to do email triage, the meeting notes
+extraction, and the CSV one. Those three together tell a really compelling story.
+
+Quick questions:
+- How long is each person's slot? I'm guessing ~10 min each?
+- Are we assuming attendees will follow along on their own laptops, or just watch?
+- Should the sample data files be pre-loaded or should they set them up as part of
+  the workshop?
+
+Also flagging: I showed the daily-outlook-triage skill to my PM last week and she was
+BLOWN AWAY. Like genuinely could not believe it was happening in a terminal. We should
+make sure to start with that one — great first impression.
+
+So pumped for this. June 3rd can't come fast enough!
+
+— Sofia
+
+---
+
+From: Aarav M. <aarav.m@contoso.com>
+To: Workshop Planning Team <workshop-team@contoso.com>
+Date: Tuesday, April 28, 2026 2:05 PM
+Subject: GitHub Copilot CLI Workshop for ALL Teams — June 3rd! 🚀
+
+Hi all!
+
+After months of "we should really do this," we finally have a date: **June 3rd**.
+
+The plan: a hands-on intro to GitHub Copilot CLI + WorkIQ for ALL teams — not just
+engineering. BPMs, PMs, Ops, Strategy, everyone. The whole point is to show people
+that the terminal is not scary, and that you can do your actual daily work faster
+with Copilot CLI.
+
+Here's the rough agenda:
+1. Terminal & CLI 101 (no fluff, just the basics)
+2. Set up Copilot CLI (live install + auth)
+3. Configure WorkIQ + Agent365 MCP (this is the magic part)
+4. Live demos: email triage, meeting notes, CSV analysis
+5. Q&A + take-home resources
+
+Room is TBD (working on it — fingers crossed for the auditorium).
+Recording: TBD.
+Catering: Probably bring your own coffee 😅
+
+Presenter lineup suggestions welcome — reply with your interest!
+
+Let's make this the best workshop we've ever done. 🚀
+
+— Aarav
