@@ -194,9 +194,8 @@ async function loadStep(stepId) {
     rewriteLinks(stepId);
     initOsTabs();
     buildSubnav(stepId);
-    markDone(stepId);
+    buildCompletionBar(stepId);
     document.getElementById('mainContent').scrollTop = 0;
-    buildSidebar(stepId); // refresh to show done
   } catch (err) {
     contentEl.innerHTML = `<div class="loading"><p>⚠️ Could not load <code>${step.file}</code></p><p style="font-size:13px;color:var(--text-subtle);margin-top:8px;">${err.message}</p></div>`;
   }
@@ -327,6 +326,53 @@ function initOsTabs() {
       matchPanel.classList.add('active');
     }
   });
+}
+
+function buildCompletionBar(stepId) {
+  const idx = STEPS.findIndex(s => s.id === stepId);
+  const next = STEPS[idx + 1];
+  const done = getDoneSteps();
+  const isAlreadyDone = done.includes(stepId);
+
+  const bar = document.createElement('div');
+  bar.className = 'completion-bar';
+  bar.id = 'completionBar';
+
+  if (isAlreadyDone) {
+    bar.classList.add('completed');
+    bar.innerHTML = `
+      <span class="completion-msg">✓ Completed</span>
+      <a class="nav-btn next completion-next-btn" href="${next ? buildStepURL(next.id) : 'index.html'}">
+        ${next ? 'Next →' : '🎉 Finish'}
+      </a>`;
+  } else {
+    bar.innerHTML = `
+      <span class="completion-hint">When you're done with this part, mark it complete to track your progress.</span>
+      <button class="nav-btn next completion-done-btn" onclick="completeAndNext('${stepId}')">
+        Complete &amp; ${next ? 'Next →' : '🎉 Finish'}
+      </button>`;
+  }
+
+  const contentEl = document.getElementById('content');
+  contentEl.appendChild(bar);
+}
+
+function completeAndNext(stepId) {
+  markDone(stepId);
+  const idx = STEPS.findIndex(s => s.id === stepId);
+  const next = STEPS[idx + 1];
+  buildSidebar(stepId);
+
+  // Update bar to completed state
+  const bar = document.getElementById('completionBar');
+  if (bar) {
+    bar.classList.add('completed');
+    bar.innerHTML = `
+      <span class="completion-msg">✓ Completed!</span>
+      <a class="nav-btn next completion-next-btn" href="${next ? buildStepURL(next.id) : 'index.html'}">
+        ${next ? 'Next →' : '🎉 Finish'}
+      </a>`;
+  }
 }
 
 // Init

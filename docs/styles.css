@@ -611,6 +611,38 @@ footer {
 .task-item { list-style: none; }
 .task-item label { cursor: pointer; }
 
+/* ===== Completion bar (bottom of step content) ===== */
+.completion-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+.completion-bar.completed {
+  border-color: var(--accent);
+  background: rgba(35,134,54,0.06);
+}
+.completion-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.completion-msg {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-light);
+}
+.completion-done-btn,
+.completion-next-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ===== Mobile ===== */
 .menu-toggle { display: none; }
 
