@@ -602,6 +602,7 @@ function showScene(id) {
   if (!el) return;
   el.classList.add('visible');
   el.style.animation = 'fadeIn 0.3s ease forwards';
+  scrollBot();
 }
 
 async function typeText(elId, text) {
@@ -611,6 +612,7 @@ async function typeText(elId, text) {
   const speed = () => fast ? SPEED_FAST : SPEED_NORMAL;
   for (const ch of text) {
     el.textContent += ch;
+    scrollBot();
     await new Promise(r => setTimeout(r, speed()));
   }
 }
@@ -638,6 +640,7 @@ async function revealRows(selector, msEach) {
     r.style.transition = 'opacity 0.15s';
     await wait(fast ? 10 : msEach);
     r.style.opacity = '1';
+    scrollBot();
   }
 }
 
@@ -694,7 +697,7 @@ const steps = [
     async run() {
       showScene('s3');
       await typeText('cmd3', 'Get-WorkshopInfo'); hide('cur3'); await wait(280);
-      show('out3');
+      show('out3'); scrollBot();
       await revealRows('#out3 .t-kv', 80);
     }
   },
@@ -704,7 +707,7 @@ const steps = [
     async run() {
       showScene('s4');
       await typeText('cmd4', 'Get-WorkshopParts | Format-Table -AutoSize'); hide('cur4'); await wait(280);
-      show('out4');
+      show('out4'); scrollBot();
       await revealRows('#parts-tbody tr', 60);
     }
   },
@@ -714,7 +717,7 @@ const steps = [
     async run() {
       showScene('s5');
       await typeText('cmd5', 'Test-Prerequisites'); hide('cur5'); await wait(280);
-      show('out5');
+      show('out5'); scrollBot();
       await revealRows('#out5 .t-prereq-line', 110);
     }
   },
@@ -724,7 +727,7 @@ const steps = [
     async run() {
       showScene('s6');
       await typeText('cmd6', 'Start-Workshop'); hide('cur6'); await wait(280);
-      show('out6');
+      show('out6'); scrollBot();
     }
   }
 ];
