@@ -18,7 +18,7 @@
       background: #1a1a1a; border: 1px solid #333; border-radius: 2px;
       vertical-align: middle; margin: 0 8px; overflow: hidden;
     }
-    .progress-fill { height: 100%; background: #0078d4; width: 0%; transition: width 80ms linear; }
+    .progress-fill { height: 100%; background: #0078d4; width: 0%; }
     #continue-hint {
       display: none; margin-top: 16px;
       font-size: 12px; color: #444;
@@ -618,12 +618,11 @@ async function typeText(elId, text) {
 async function progressBar(fillId, ms) {
   const fill = $(fillId);
   if (!fill) return;
-  const ticks = 40;
-  const step = (fast ? Math.min(ms, 400) : ms) / ticks;
-  for (let i = 1; i <= ticks; i++) {
-    fill.style.width = (i / ticks * 100) + '%';
-    await new Promise(r => setTimeout(r, step));
-  }
+  if (fast) { fill.style.width = '100%'; return; }
+  // Use a single CSS transition — far more reliable than a JS tick loop
+  fill.style.transition = `width ${ms}ms linear`;
+  fill.style.width = '100%';
+  await new Promise(r => setTimeout(r, ms));
 }
 
 async function revealRows(selector, msEach) {
@@ -671,6 +670,8 @@ const steps = [
       await typeText('cmd1', 'Install-Module GitHubCopilot -Scope CurrentUser');
       hide('cur1'); await wait(300);
       show('out1');
+      // Double rAF: yield so browser paints the element at width:0% before animating
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       await progressBar('pbar', 1100);
       show('pbar-done'); await wait(250);
       show('pbar-msg'); await wait(350);
